@@ -1,107 +1,92 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity } from 'react-native';
-import { useMutation, gql, useLazyQuery } from '@apollo/client';
-
-const GET_TODOS = gql`
-  query players {
-    players  {
-        name
-        id
-        jerseyNumber
-        wonSuperBowl
-    }
-  }
-`;
-
-const ADD_TODO = gql`
-  mutation createPlayer($name: String!) {
-    createPlayer(name: $name) {
-      id
-      name
-    }
-  }
-`;
-
-const UPDATE_TODO = gql`
-mutation updatePlayer($id: String!, $name: String!) {
-    updatePlayer(id: $id, name: $name) {
-      id
-      name
-    }
-  }
-`;
-
-const DELETE_TODO = gql`
-mutation deletePlayer($id: String!) {
-    deletePlayer(id: $id) {
-      id
-    }
-  }
-`;
-
+import { useMutation, useLazyQuery } from '@apollo/client';
+import { GET_TODOS, ADD_TODO, UPDATE_TODO, DELETE_TODO } from '../../service';
+import Todo from './todo';
 
 const Todos = () => {
     // const { loading, error, data, refetch, networkStatus } = useQuery(GET_TODOS);
-    const [getDog, { loading, data }] = useLazyQuery(GET_TODOS);
+    const [item, setItem] = useState(-1);
+    const [name, setName] = useState('');
+    const [test, setTest] = useState('');
+    const [todos, setTodos] = useState([]);
+    const [getTotos, { loading, data }] = useLazyQuery(GET_TODOS);
     const [createPlayer] = useMutation(ADD_TODO);
     const [updatePlayer] = useMutation(UPDATE_TODO);
     const [deletePlayer] = useMutation(DELETE_TODO);
-    const [name, setName] = useState('');
-    const [item, setItem] = useState(-1);
-    useEffect(() => {
-        getDog();
-    }, []);
-    if (loading) return (<View style={[styles.viewContainer, styles.viewLoading]}><Text style={styles.textLoading}>Loading...</Text></View>);
 
-    function renderTodo(todo) {
-        return (<TouchableOpacity
-            onPress={() => setItem(todo.id)}
-            style={[styles.viewItem, todo.id === item && { backgroundColor: '#ffcccc' }]}>
-            <Text style={styles.textName}>{todo?.name}</Text>
-        </TouchableOpacity>);
+    useEffect(() => {
+        getTotos();
+    }, []);
+
+    useEffect(() => {
+        setTodos(data?.players || []);
+    }, [data]);
+
+    const memoizedCallback = useCallback(
+        () => {
+            setItemAndTest(todos);
+        },
+        [todos],
+    );
+
+    function setItemAndTest(hi) {
+        const todoss = [...todos];
+        todoss[0] = { id: '11111', name: 'jujujuju' };
+        console.tron.log('todoss', todoss);
+        setTodos(todoss);
+        setTest(`${item} ${hi}`);
     }
 
+    function renderTodo(todo) {
+        return (<Todo
+            key={todo.id}
+            setItemAndTest={memoizedCallback}
+            setItem={setItem}
+            todo={todo}
+            isChoose={todo.id === item} />);
+    }
+
+    if (loading) return (<View
+        style={[styles.viewContainer, styles.viewLoading]}>
+        <Text style={styles.textLoading}>Loading...</Text>
+    </View>);
+
+    console.tron.log('rerender');
     return (
         <View style={styles.viewContainer}>
             <TextInput
                 value={name}
                 onChangeText={name => setName(name)}
                 placeholder={'Enter Name'}
-                style={styles.textInput}
-            />
+                style={styles.textInput} />
             <View style={styles.viewRow}>
                 <TouchableOpacity
-                    onPress={() => {
-                        getDog();
-                    }}
+                    onPress={() => getTotos()}
                     style={styles.button}>
                     <Text style={styles.textName}>Reload</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                    onPress={() => {
-                        deletePlayer({ variables: { id: item } });
-                    }}
+                    onPress={() => deletePlayer({ variables: { id: item } })}
                     style={styles.button}>
                     <Text style={styles.textName}>Delete</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                    onPress={() => {
-                        updatePlayer({ variables: { id: item, name } });
-                    }}
+                    onPress={() => updatePlayer({ variables: { id: item, name } })}
                     style={styles.button}>
                     <Text style={styles.textName}>Update</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                    onPress={() => {
-                        createPlayer({ variables: { name } });
-                    }}
+                    onPress={() => createPlayer({ variables: { name } })}
                     style={styles.button}>
                     <Text style={styles.textName}>Add</Text>
                 </TouchableOpacity>
             </View>
             <Text style={styles.textName}> id item choose: {item}</Text>
+            <View height={10} />
+            <Text style={styles.textName}> test {test}</Text>
             <ScrollView style={styles.viewContainer}>
-                {(data?.players || []).map(renderTodo)}
+                {(todos || []).map(renderTodo)}
             </ScrollView>
         </View>
     );
@@ -113,6 +98,7 @@ const styles = StyleSheet.create({
     viewContainer: {
         flex: 1,
         backgroundColor: 'white',
+        marginTop: 10,
     },
     viewLoading: {
         backgroundColor: '#cce6ff',
@@ -132,16 +118,6 @@ const styles = StyleSheet.create({
         fontSize: 15,
         color: '#ff5500',
     },
-    viewItem: {
-        paddingVertical: 15,
-        marginVertical: 5,
-        backgroundColor: '#e6e6e6',
-        alignItems: 'center',
-    },
-    textName: {
-        color: '#595959',
-        fontSize: 15,
-    },
     textInput: {
         marginTop: 50,
         fontSize: 15,
@@ -157,6 +133,10 @@ const styles = StyleSheet.create({
     button: {
         backgroundColor: '#00b300',
         justifyContent: 'center',
-        paddingHorizontal: 20,
+        alignItems: 'center',
+        marginHorizontal: 5,
+        flex: 1,
+        borderRadius: 5,
+        marginBottom: 10,
     },
 });

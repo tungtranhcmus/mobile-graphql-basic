@@ -27,7 +27,7 @@ module.exports = {
     },
     sourceType: 'module',
   },
-  plugins: ['react'],
+  plugins: ['react', 'react-hooks'],
   rules: {
     'linebreak-style': [0, 'unix'],
     quotes: ['error', 'single'],
@@ -39,6 +39,8 @@ module.exports = {
     'import/no-unresolved': 2,
     'no-multi-spaces': 2,
     'react/display-name': 0,
+    'react-hooks/rules-of-hooks': 'error',
+    'react-hooks/exhaustive-deps': 'warn',
   },
   globals: {
     __DEV__: true,
